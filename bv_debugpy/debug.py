@@ -6,21 +6,19 @@ import inspect
 from itertools import izip_longest
 import os
 
-CALLER_DEPTH = int(os.environ.get('DEBUGBY_CALLER_DEPTH', '3'))
-LIST_ARGUMENTS = bool(os.environ.get('DEBUGBY_LIST_ARGUMENTS', 'True'))
-IDENTATION = int(os.environ.get('DEBUGBY_IDENTATION', '4'))
+from parameter_names import *
 
 State = namedtuple('State', ['depth'])
 state = State(depth=0)
 
 
-def debugpy(list_arguments=LIST_ARGUMENTS):
+def debugpy(**parameters):
     def _decorator(func):
         @functools.wraps(func)
         def _function(*args, **kwargs):
             global state
             if state.depth < CALLER_DEPTH:
-                log(func, args=args, kwargs=kwargs, parameters=compute_log_parameters())
+                log(func, args=args, kwargs=kwargs, parameters=compute_parameters(parameters))
             state = state._replace(depth=state.depth + 1)
             returned_value = func(*args, **kwargs)
             state = state._replace(depth=state.depth - 1)
@@ -33,7 +31,12 @@ def log(function, args, kwargs, parameters):
     arguments = compute_arguments(function, args, kwargs)
     arguments_str = ','.join(str(k) + '=' + str(v) for k,v in arguments)
     full_value = function.func_name + ':' + arguments_str if arguments_str else function.func_name
-    print(' ' * IDENTATION * state.depth + full_value)
+    log_message = ' ' * IDENTATION * state.depth + full_value
+    if parameters[OUT_FILE]:
+        with open(parameters[OUT_FILE], 'a') as outputfile:
+            outputfile.write(log_message + '\n')
+    else:
+        print(log_message)
 
 
 def compute_arguments(function, args, kwargs):
@@ -63,19 +66,23 @@ def compute_arguments(function, args, kwargs):
 
 def reload_configuration():
     """ Reloads the configuration parameters from the available sources. """
-    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION
+    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE
     CALLER_DEPTH = int(os.environ.get('DEBUGBY_CALLER_DEPTH', '3'))
     LIST_ARGUMENTS = bool(os.environ.get('DEBUGBY_LIST_ARGUMENTS', 'True'))
     IDENTATION = int(os.environ.get('DEBUGBY_IDENTATION', '4'))
-
+    OUTPUT_FILE = os.environ.get(ENV_OUTPUT_FILE, None)
 
 def reset_to_default():
     """ Resets all configuration parameters to defaults. """
-    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION
+    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE
     CALLER_DEPTH = 3
     LIST_ARGUMENTS = True
     IDENTATION = 4
+    OUTPUT_FILE = None
 
+reload_configuration()
 
-def compute_log_parameters():
-    return {}
+def compute_parameters(parameters={}):
+    if OUT_FILE not in parameters:
+        parameters[OUT_FILE] = OUTPUT_FILE
+    return parameters
