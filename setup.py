@@ -2,7 +2,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="bv_debugpy",
+    name="debugbee",
     version="0.0.1",
     packages=find_packages()
 )

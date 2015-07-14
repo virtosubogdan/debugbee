@@ -1,20 +1,21 @@
 import os
 
-from bv_debugpy.debug import debugpy, reload_configuration, reset_to_default
+from debugbee.debug import debugbee, reload_configuration, reset_to_default
+from debugbee import parameter_names as pn
 from testutils import *
 
 FILE1 = "/tmp/output_test.out"
 FILE2 = "/tmp/output_test2.out"
 
-@debugpy(outputfile=FILE1)
+@debugbee(outputfile=FILE1)
 def simple_function():
     return "simple_result"
 
-@debugpy()
+@debugbee()
 def simple_function_no_param():
     return "simple_result"
 
-@debugpy(outputfile=FILE1)
+@debugbee(outputfile=FILE1)
 def fibbonaci(number):
     return 1 if number == 0 or number == 1 else (fibbonaci(number-1) + fibbonaci(number-2))
 
@@ -31,7 +32,7 @@ class TestParameters(object):
             pass
 
     def test_output_to_file(self, capsys):
-        os.environ['DEBUGBEE_OUTPUT_FILE'] = FILE2
+        os.environ[pn.ENV_OUTPUT_FILE] = FILE2
         reload_configuration()
         simple_function()
         self.assertOutput(FILE1, capsys, "simple_function\n")
@@ -48,7 +49,7 @@ fibbonaci:number=3
 """)
 
     def test_output_to_file_env_set(self, capsys):
-        os.environ['DEBUGBEE_OUTPUT_FILE'] = FILE2
+        os.environ[pn.ENV_OUTPUT_FILE] = FILE2
         reload_configuration()
         simple_function_no_param()
         self.assertOutput(FILE2, capsys, "simple_function_no_param\n")

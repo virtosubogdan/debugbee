@@ -5,20 +5,21 @@ All purpose testing.
 
 import os
 
-from bv_debugpy.debug import debugpy, reload_configuration, reset_to_default
+from debugbee.debug import debugbee, reload_configuration, reset_to_default
+import debugbee.parameter_names as pn
 
 
-@debugpy()
+@debugbee()
 def simple_function():
     return "simple_result"
 
 
-@debugpy()
+@debugbee()
 def fibbonaci(number):
     return 1 if number == 0 or number == 1 else (fibbonaci(number-1) + fibbonaci(number-2))
 
 
-@debugpy()
+@debugbee()
 def max(a, b, c, *args, **kwargs):
     maximum = a if a > b else b
     maximum = maximum if maximum > c else c
@@ -47,7 +48,7 @@ fibbonaci:number=3
 
 
     def test_identation_change(self, capsys):
-        os.environ['DEBUGBY_IDENTATION'] = '5'
+        os.environ[pn.ENV_IDENTATION] = '5'
         reload_configuration()
         fibbonaci(3)
         out, err = capsys.readouterr()

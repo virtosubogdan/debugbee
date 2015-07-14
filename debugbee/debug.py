@@ -12,7 +12,7 @@ State = namedtuple('State', ['depth'])
 state = State(depth=0)
 
 
-def debugpy(**parameters):
+def debugbee(**parameters):
     def _decorator(func):
         @functools.wraps(func)
         def _function(*args, **kwargs):
@@ -67,9 +67,9 @@ def compute_arguments(function, args, kwargs):
 def reload_configuration():
     """ Reloads the configuration parameters from the available sources. """
     global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE
-    CALLER_DEPTH = int(os.environ.get('DEBUGBY_CALLER_DEPTH', '3'))
-    LIST_ARGUMENTS = bool(os.environ.get('DEBUGBY_LIST_ARGUMENTS', 'True'))
-    IDENTATION = int(os.environ.get('DEBUGBY_IDENTATION', '4'))
+    CALLER_DEPTH = int(os.environ.get(ENV_CALLER_DEPTH, '3'))
+    LIST_ARGUMENTS = bool(os.environ.get(ENV_LIST_ARGUMENTS, 'True'))
+    IDENTATION = int(os.environ.get(ENV_IDENTATION, '4'))
     OUTPUT_FILE = os.environ.get(ENV_OUTPUT_FILE, None)
 
 def reset_to_default():
