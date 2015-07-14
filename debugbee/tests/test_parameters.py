@@ -35,12 +35,12 @@ class TestParameters(object):
         os.environ[pn.ENV_OUTPUT_FILE] = FILE2
         reload_configuration()
         simple_function()
-        self.assertOutput(FILE1, capsys, "simple_function\n")
+        self.assert_output(FILE1, capsys, "simple_function\n")
 
     def test_appending_data_to_file(self, capsys):
         simple_function()
         fibbonaci(3)
-        self.assertOutput(FILE1, capsys, """simple_function
+        self.assert_output(FILE1, capsys, """simple_function
 fibbonaci:number=3
     fibbonaci:number=2
         fibbonaci:number=1
@@ -52,9 +52,9 @@ fibbonaci:number=3
         os.environ[pn.ENV_OUTPUT_FILE] = FILE2
         reload_configuration()
         simple_function_no_param()
-        self.assertOutput(FILE2, capsys, "simple_function_no_param\n")
+        self.assert_output(FILE2, capsys, "simple_function_no_param\n")
 
-    def assertOutput(self, filename, capsys, expected):
+    def assert_output(self, filename, capsys, expected):
         with open(filename, 'r') as out:
             assert out.read() == expected
         out, err = capsys.readouterr()

@@ -6,7 +6,7 @@ import inspect
 from itertools import izip_longest
 import os
 
-from parameter_names import *
+from .parameter_names import *
 
 State = namedtuple('State', ['depth'])
 state = State(depth=0)
@@ -31,7 +31,7 @@ def log(function, args, kwargs, parameters):
     arguments = compute_arguments(function, args, kwargs)
     log_message = make_log_message(function.func_name, arguments)
 
-    overflow_charactes =  len(log_message) - parameters[MESSAGE_MAX_WIDTH]
+    overflow_charactes = len(log_message) - parameters[MESSAGE_MAX_WIDTH]
     if overflow_charactes > 0:
         arguments, overflow_charactes = trim_arguments(arguments, overflow_charactes)
         log_message = make_log_message(function.func_name, arguments)
@@ -43,7 +43,7 @@ def log(function, args, kwargs, parameters):
         print(log_message)
 
 def make_log_message(function_name, arguments):
-    arguments_str = ','.join(str(k) + '=' + str(v) for k,v in arguments)
+    arguments_str = ','.join(str(k) + '=' + str(v) for k, v in arguments)
     full_value = function_name + ':' + arguments_str if arguments_str else function_name
     return ' ' * IDENTATION * state.depth + full_value
 
