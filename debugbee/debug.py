@@ -29,14 +29,46 @@ def debugbee(**parameters):
 
 def log(function, args, kwargs, parameters):
     arguments = compute_arguments(function, args, kwargs)
-    arguments_str = ','.join(str(k) + '=' + str(v) for k,v in arguments)
-    full_value = function.func_name + ':' + arguments_str if arguments_str else function.func_name
-    log_message = ' ' * IDENTATION * state.depth + full_value
+    log_message = make_log_message(function.func_name, arguments)
+
+    overflow_charactes =  len(log_message) - parameters[MESSAGE_MAX_WIDTH]
+    if overflow_charactes > 0:
+        arguments, overflow_charactes = trim_arguments(arguments, overflow_charactes)
+        log_message = make_log_message(function.func_name, arguments)
+
     if parameters[OUT_FILE]:
         with open(parameters[OUT_FILE], 'a') as outputfile:
             outputfile.write(log_message + '\n')
     else:
         print(log_message)
+
+def make_log_message(function_name, arguments):
+    arguments_str = ','.join(str(k) + '=' + str(v) for k,v in arguments)
+    full_value = function_name + ':' + arguments_str if arguments_str else function_name
+    return ' ' * IDENTATION * state.depth + full_value
+
+
+def trim_arguments(arguments, expected_gain):
+    for index, argument_data in enumerate(arguments):
+        arg_name, arg_value = argument_data
+        if len(arg_name) > 10:
+            gain, arg_name = squash_arg_name(arg_name)
+            arguments[index] = (arg_name, arg_value)
+            expected_gain -= gain
+        if expected_gain <= 0:
+            return arguments, 0
+        str_val = str(arg_value)
+        if len(str_val) > 10:
+            expected_gain -= len(str_val) - 10
+            arguments[index] = (arg_name, str_val[:8] + '..')
+        if expected_gain <= 0:
+            return arguments, 0
+        str_val = str(arg_value)
+    return arguments, expected_gain
+
+
+def squash_arg_name(argument_name):
+    return 0, argument_name
 
 
 def compute_arguments(function, args, kwargs):
@@ -66,23 +98,30 @@ def compute_arguments(function, args, kwargs):
 
 def reload_configuration():
     """ Reloads the configuration parameters from the available sources. """
-    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE
+    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH
     CALLER_DEPTH = int(os.environ.get(ENV_CALLER_DEPTH, '3'))
     LIST_ARGUMENTS = bool(os.environ.get(ENV_LIST_ARGUMENTS, 'True'))
     IDENTATION = int(os.environ.get(ENV_IDENTATION, '4'))
     OUTPUT_FILE = os.environ.get(ENV_OUTPUT_FILE, None)
+    OUT_WIDTH = os.environ.get(ENV_OUT_WIDTH, 120)
+
 
 def reset_to_default():
     """ Resets all configuration parameters to defaults. """
-    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE
+    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH
     CALLER_DEPTH = 3
     LIST_ARGUMENTS = True
     IDENTATION = 4
     OUTPUT_FILE = None
+    OUT_WIDTH = 120
+
 
 reload_configuration()
+
 
 def compute_parameters(parameters={}):
     if OUT_FILE not in parameters:
         parameters[OUT_FILE] = OUTPUT_FILE
+    if MESSAGE_MAX_WIDTH not in parameters:
+        parameters[MESSAGE_MAX_WIDTH] = OUT_WIDTH
     return parameters

@@ -25,6 +25,11 @@ def max(a, b, c, *args, **kwargs):
     maximum = maximum if maximum > c else c
     return maximum
 
+@debugbee()
+def identity(argument):
+    return argument
+
+
 class TestFunctionDebug(object):
 
     def test_simple_function(self, capsys):
@@ -105,3 +110,15 @@ fibbonaci:number=4
         assert out == """max:a=1,b=2,c=3,=10,=12\n"""
         assert err == ""
 
+class TestLongOutput(object):
+
+    def test_long_argument_data(self, capsys):
+        long_string = '-' * 1000
+        identity(long_string)
+        expect_sys(capsys, out='identity:argument=--------..\n')
+
+
+def expect_sys(capsys, out="", err=""):
+    actual_out, actual_err = capsys.readouterr()
+    assert actual_out == out
+    assert actual_err == err
