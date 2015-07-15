@@ -26,7 +26,7 @@ def max(a, b, c, *args, **kwargs):
     return maximum
 
 @debugbee()
-def identity(argument):
+def identity(argument, *args, **kwargs):
     return argument
 
 
@@ -116,6 +116,12 @@ class TestLongOutput(object):
         long_string = '-' * 1000
         identity(long_string)
         expect_sys(capsys, out='identity:argument=--------..\n')
+
+
+    def test_long_argument_name(self, capsys):
+        long_string = '-' * 10
+        identity(long_string, long_argument_name='-' * 200)
+        expect_sys(capsys, out='identity:argument=----------,long.arg..name=--------..\n')
 
 
 def expect_sys(capsys, out="", err=""):

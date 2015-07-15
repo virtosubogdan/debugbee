@@ -67,8 +67,10 @@ def trim_arguments(arguments, expected_gain):
     return arguments, expected_gain
 
 
-def squash_arg_name(argument_name):
-    return 0, argument_name
+def squash_arg_name(argument_name, max_part_len=4):
+    new_name = '.'.join(part if len(part) <= max_part_len else part[:max_part_len-1] + '.'
+                        for part in argument_name.split('_'))
+    return len(argument_name) - len(new_name), new_name
 
 
 def compute_arguments(function, args, kwargs):
