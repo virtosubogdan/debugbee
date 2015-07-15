@@ -1,7 +1,7 @@
 """
 All purpose testing.
 """
-# pylint: disable=missing-docstring
+# pylint: disable=missing-docstring, invalid-name, no-self-use, unused-argument
 
 import os
 
@@ -20,7 +20,7 @@ def fibbonaci(number):
 
 
 @debugbee()
-def max(a, b, c, *args, **kwargs):
+def max3(a, b, c, *args, **kwargs):
     maximum = a if a > b else b
     maximum = maximum if maximum > c else c
     return maximum
@@ -84,30 +84,30 @@ fibbonaci:number=4
 
     def test_argument_printing(self, capsys):
         reset_to_default()
-        max(1, 2, 3)
+        max3(1, 2, 3)
         out, err = capsys.readouterr()
-        expected_out = """max:a=1,b=2,c=3\n"""
+        expected_out = """max3:a=1,b=2,c=3\n"""
         assert out == expected_out
         assert err == ""
-        max(1, b=2, c=3)
-        out, err = capsys.readouterr()
-        assert out == expected_out
-        assert err == ""
-        max(b=2, c=3, a=1)
+        max3(1, b=2, c=3)
         out, err = capsys.readouterr()
         assert out == expected_out
         assert err == ""
-        max(1, **{'b':2, 'c':3})
+        max3(b=2, c=3, a=1)
         out, err = capsys.readouterr()
         assert out == expected_out
         assert err == ""
-        max(1, b=2, c=3, d=10, e=12)
+        max3(1, **{'b':2, 'c':3})
         out, err = capsys.readouterr()
-        assert out == """max:a=1,b=2,c=3,d=10,e=12\n"""
+        assert out == expected_out
         assert err == ""
-        max(1, 2, 3, 10, 12)
+        max3(1, b=2, c=3, d=10, e=12)
         out, err = capsys.readouterr()
-        assert out == """max:a=1,b=2,c=3,=10,=12\n"""
+        assert out == """max3:a=1,b=2,c=3,d=10,e=12\n"""
+        assert err == ""
+        max3(1, 2, 3, 10, 12)
+        out, err = capsys.readouterr()
+        assert out == """max3:a=1,b=2,c=3,=10,=12\n"""
         assert err == ""
 
 class TestLongOutput(object):

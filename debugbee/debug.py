@@ -1,4 +1,7 @@
-""" Module for configuration and primary debug decorator. """
+#pylint: disable=maybe-no-member, global-statement, invalid-name
+"""
+Module for configuration and primary debug decorator.
+"""
 from __future__ import print_function
 from collections import namedtuple
 import functools
@@ -19,9 +22,9 @@ def debugbee(**parameters):
             global state
             if state.depth < CALLER_DEPTH:
                 log(func, args=args, kwargs=kwargs, parameters=compute_parameters(parameters))
-            state = state._replace(depth=state.depth + 1)
+            state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
             returned_value = func(*args, **kwargs)
-            state = state._replace(depth=state.depth - 1)
+            state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
             return returned_value
         return _function
     return _decorator
@@ -121,7 +124,9 @@ def reset_to_default():
 reload_configuration()
 
 
-def compute_parameters(parameters={}):
+def compute_parameters(parameters=None):
+    if not parameters:
+        parameters = {}
     if OUT_FILE not in parameters:
         parameters[OUT_FILE] = OUTPUT_FILE
     if MESSAGE_MAX_WIDTH not in parameters:
