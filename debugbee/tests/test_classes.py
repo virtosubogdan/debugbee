@@ -16,6 +16,23 @@ class SimpleClass(object):
     def get_something(self):
         return 3
 
+@debugbee_class()
+class PrettyClass(object):
+    def __init__(self):
+        print "Pretty Init"
+
+    def get_something(self):
+        return 3
+
+    def __str__(self):
+        return "Pretty Object"
+
+    def __unicode__(self):
+        return u"Pretty Object in unicode"
+
+    def _private(self):
+        return "this is private!"
+
 class TestFunctionDebug(object):
 
     def test_simple_class(self, capsys):
@@ -25,5 +42,16 @@ class TestFunctionDebug(object):
         assert err == ""
         obj.get_something()
         out, err = capsys.readouterr()
-        assert out == "get_something\n"
+        assert out == "SimpleClass.get_something\n"
+        assert err == ""
+
+    def test_ignore_representations(self, capsys):
+        obj = PrettyClass()
+        out, err = capsys.readouterr()
+        assert out == "init of <class 'debugbee.tests.test_classes.PrettyClass'>\nPretty Init\n"
+        assert err == ""
+        obj._private()
+        assert str(obj) != unicode(obj)
+        out, err = capsys.readouterr()
+        assert out == "PrettyClass._private\n"
         assert err == ""

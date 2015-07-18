@@ -28,7 +28,8 @@ def debugbee_class(**parameters):
     def _decorator(cls):
         class DecoratedClass(cls):
             def __init__(self):
-                print("init of {}".format(str(cls)))
+                computed_parameters = compute_parameters(parameters)
+                write_message("init of {}".format(str(cls)), computed_parameters)
                 cls.__init__(self)
                 # TODO: don't get why this can't be used
                 # super(DecoratedClass, self).__init__()
@@ -37,17 +38,18 @@ def debugbee_class(**parameters):
                 attr = object.__getattribute__(self, name)
                 if hasattr(attr, '__call__'):
                     def newfunc(*args, **kwargs):
-                        return _debugbee_log(attr, args, kwargs, parameters, cls=cls)
+                        return _debugbee_log(attr, args, kwargs, parameters, cls=cls, obj=self)
                     return newfunc
                 else:
                     return attr
         return DecoratedClass
     return _decorator
 
-def _debugbee_log(func, args, kwargs, parameters, cls=None):
+def _debugbee_log(func, args, kwargs, parameters, cls=None, obj=None):
     global state
+    parameters = compute_parameters(parameters)
     if state.depth < CALLER_DEPTH:
-        log(func, args=args, kwargs=kwargs, parameters=compute_parameters(parameters), cls=cls)
+        log(func, args=args, kwargs=kwargs, parameters=parameters, cls=cls)
     state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
     returned_value = func(*args, **kwargs)
     state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
@@ -56,22 +58,26 @@ def _debugbee_log(func, args, kwargs, parameters, cls=None):
 
 def log(function, args, kwargs, parameters, cls):
     arguments = compute_arguments(function, args, kwargs, cls is not None)
-    log_message = make_log_message(function.func_name, arguments)
+    log_message = make_log_message(function.func_name, arguments, cls)
 
     overflow_charactes = len(log_message) - parameters[MESSAGE_MAX_WIDTH]
     if overflow_charactes > 0:
         arguments, overflow_charactes = trim_arguments(arguments, overflow_charactes)
         log_message = make_log_message(function.func_name, arguments)
+    write_message(log_message, parameters)
 
+
+def write_message(log_message, parameters):
     if parameters[OUT_FILE]:
         with open(parameters[OUT_FILE], 'a') as outputfile:
             outputfile.write(log_message + '\n')
     else:
         print(log_message)
 
-def make_log_message(function_name, arguments):
+def make_log_message(function_name, arguments, cls=None):
     arguments_str = ','.join(str(k) + '=' + str(v) for k, v in arguments)
     full_value = function_name + ':' + arguments_str if arguments_str else function_name
+    full_value = str(cls.__name__) + '.' + full_value if cls else full_value
     return ' ' * IDENTATION * state.depth + full_value
 
 
