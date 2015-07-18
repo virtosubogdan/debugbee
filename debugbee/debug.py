@@ -19,19 +19,43 @@ def debugbee(**parameters):
     def _decorator(func):
         @functools.wraps(func)
         def _function(*args, **kwargs):
-            global state
-            if state.depth < CALLER_DEPTH:
-                log(func, args=args, kwargs=kwargs, parameters=compute_parameters(parameters))
-            state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
-            returned_value = func(*args, **kwargs)
-            state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
-            return returned_value
+            return _debugbee_log(func, args, kwargs, parameters)
         return _function
     return _decorator
 
 
-def log(function, args, kwargs, parameters):
-    arguments = compute_arguments(function, args, kwargs)
+def debugbee_class(**parameters):
+    def _decorator(cls):
+        class DecoratedClass(cls):
+            def __init__(self):
+                print("init of {}".format(str(cls)))
+                cls.__init__(self)
+                # TODO: don't get why this can't be used
+                # super(DecoratedClass, self).__init__()
+
+            def __getattribute__(self, name):
+                attr = object.__getattribute__(self, name)
+                if hasattr(attr, '__call__'):
+                    def newfunc(*args, **kwargs):
+                        return _debugbee_log(attr, args, kwargs, parameters, cls=cls)
+                    return newfunc
+                else:
+                    return attr
+        return DecoratedClass
+    return _decorator
+
+def _debugbee_log(func, args, kwargs, parameters, cls=None):
+    global state
+    if state.depth < CALLER_DEPTH:
+        log(func, args=args, kwargs=kwargs, parameters=compute_parameters(parameters), cls=cls)
+    state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
+    returned_value = func(*args, **kwargs)
+    state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
+    return returned_value
+
+
+def log(function, args, kwargs, parameters, cls):
+    arguments = compute_arguments(function, args, kwargs, cls is not None)
     log_message = make_log_message(function.func_name, arguments)
 
     overflow_charactes = len(log_message) - parameters[MESSAGE_MAX_WIDTH]
@@ -76,12 +100,14 @@ def squash_arg_name(argument_name, max_part_len=4):
     return len(argument_name) - len(new_name), new_name
 
 
-def compute_arguments(function, args, kwargs):
+def compute_arguments(function, args, kwargs, is_object):
     copied_kwargs = False
     cmp_arguments = []
     f_args, _, _, f_defaults = inspect.getargspec(function)
     extra_args = []
     for name, value in izip_longest(f_args, args):
+        if is_object and name == 'self':
+            continue
         if name is None:
             extra_args.append(('', value))
         elif value is None:
