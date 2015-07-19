@@ -75,7 +75,16 @@ def write_message(log_message, parameters):
         print(log_message)
 
 def make_log_message(function_name, arguments, cls=None):
-    arguments_str = ','.join(str(k) + '=' + str(v) for k, v in arguments)
+    arguments_str = ''
+    for name, value in arguments:
+        if arguments_str:
+            arguments_str += ','
+        value_cls = type(value)
+        if value_cls.__str__ == object.__str__:
+            if value_cls.__module__ == 'debugbee.debug':
+                value_cls = value_cls.__bases__[0]
+            value = value_cls.__name__
+        arguments_str += str(name) + '=' + str(value)
     full_value = function_name + ':' + arguments_str if arguments_str else function_name
     full_value = str(cls.__name__) + '.' + full_value if cls else full_value
     return ' ' * IDENTATION * state.depth + full_value

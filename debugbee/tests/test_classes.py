@@ -3,10 +3,8 @@ Class logging testing.
 """
 # pylint: disable=missing-docstring, invalid-name, no-self-use, unused-argument
 
-import os
+from debugbee.debug import debugbee_class, debugbee
 
-from debugbee.debug import debugbee_class, reload_configuration, reset_to_default
-import debugbee.parameter_names as pn
 
 @debugbee_class()
 class SimpleClass(object):
@@ -15,6 +13,13 @@ class SimpleClass(object):
 
     def get_something(self):
         return 3
+
+    def get_more(self):
+        return self.get_something()
+
+    def get_even_more(self):
+        return self.get_more()
+
 
 @debugbee_class()
 class PrettyClass(object):
@@ -32,6 +37,11 @@ class PrettyClass(object):
 
     def _private(self):
         return "this is private!"
+
+
+@debugbee()
+def debugged_method(simpleObj):
+    return simpleObj.get_something()
 
 class TestFunctionDebug(object):
 
@@ -54,4 +64,28 @@ class TestFunctionDebug(object):
         assert str(obj) != unicode(obj)
         out, err = capsys.readouterr()
         assert out == "PrettyClass._private\n"
+        assert err == ""
+
+    def test_class_depth_call(self, capsys):
+        obj = SimpleClass()
+        out, err = capsys.readouterr()
+        assert out == "init of <class 'debugbee.tests.test_classes.SimpleClass'>\nnormal init\n"
+        assert err == ""
+        obj.get_even_more()
+        out, err = capsys.readouterr()
+        assert out == """SimpleClass.get_even_more
+    SimpleClass.get_more
+        SimpleClass.get_something\n"""
+        assert err == ""
+
+    def test_class_and_function(self, capsys):
+        obj = SimpleClass()
+        obj.get_something()
+        debugged_method(obj)
+        out, err = capsys.readouterr()
+        assert out == """init of <class 'debugbee.tests.test_classes.SimpleClass'>
+normal init
+SimpleClass.get_something
+debugged_method:simpleObj=SimpleClass
+    SimpleClass.get_something\n"""
         assert err == ""
