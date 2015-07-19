@@ -52,12 +52,7 @@ def _debugbee_log(func, args, kwargs, parameters, cls=None, obj=None):
     depth_increases = 0
     if outer_stacks:
         stack = inspect.stack()
-        for depth in range(outer_stacks):
-            frame = stack[2 + depth][0]
-            stack_info = inspect.getframeinfo(frame)
-            write_message(stack_info.function, parameters)
-            state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
-            depth_increases += 1
+        depth_increases = log_stack(stack, 0, outer_stacks, parameters)
     if state.depth < CALLER_DEPTH:
         log(func, args=args, kwargs=kwargs, parameters=parameters, cls=cls)
     state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
@@ -66,6 +61,22 @@ def _debugbee_log(func, args, kwargs, parameters, cls=None, obj=None):
     for _ in range(depth_increases):
         state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
     return returned_value
+
+
+def log_stack(stack, level, max_level, parameters):
+    global state
+    if level == max_level:
+        return 0
+    frame = stack[2 + level][0]
+    stack_info = inspect.getframeinfo(frame)
+    next_frame = stack[3 + level][0]
+    next_stack_info = inspect.getframeinfo(next_frame)
+    if next_stack_info.filename.endswith('debugbee/debug.py'):
+        return 0
+    depth_increases = log_stack(stack, level + 1, max_level, parameters)
+    write_message(_indent(stack_info.function), parameters)
+    state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
+    return depth_increases + 1
 
 
 def log(function, args, kwargs, parameters, cls):
@@ -86,6 +97,7 @@ def write_message(log_message, parameters):
     else:
         print(log_message)
 
+
 def make_log_message(function_name, arguments, cls=None):
     arguments_str = ''
     for name, value in arguments:
@@ -99,7 +111,11 @@ def make_log_message(function_name, arguments, cls=None):
         arguments_str += str(name) + '=' + str(value)
     full_value = function_name + ':' + arguments_str if arguments_str else function_name
     full_value = str(cls.__name__) + '.' + full_value if cls else full_value
-    return ' ' * IDENTATION * state.depth + full_value
+    return _indent(full_value)
+
+
+def _indent(message):
+    return ' ' * IDENTATION * state.depth + message
 
 
 def trim_arguments(arguments, expected_gain):

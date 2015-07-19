@@ -2,7 +2,7 @@
 All purpose testing.
 """
 # pylint: disable=missing-docstring, invalid-name, no-self-use, unused-argument
-
+# TODO: improve logging for parameter=function
 import os
 
 from debugbee.debug import debugbee, reload_configuration, reset_to_default
@@ -32,6 +32,17 @@ def identity(argument, *args, **kwargs):
 @debugbee(outer=1)
 def outer_debug():
     return "function with outer debug"
+
+@debugbee(outer=2)
+def outer_debug2():
+    return "function with outer debug=2"
+
+def proxy(function):
+    return function()
+
+@debugbee()
+def debug_proxy(function):
+    return function()
 
 
 class TestFunctionDebug(object):
@@ -118,6 +129,21 @@ fibbonaci:number=4
         outer_debug()
         out, err = capsys.readouterr()
         assert out == "test_outer_debug\n    outer_debug\n"
+        assert err == ""
+
+    def test_outer_debug2(self, capsys):
+        proxy(outer_debug2)
+        out, err = capsys.readouterr()
+        assert out == """test_outer_debug2
+    proxy
+        outer_debug2\n"""
+        assert err == ""
+
+    def test_outer_debug_overlapping(self, capsys):
+        debug_proxy(outer_debug2)
+        out, err = capsys.readouterr()
+        assert out == """debug_proxy:function=function
+    outer_debug2\n"""
         assert err == ""
 
 
