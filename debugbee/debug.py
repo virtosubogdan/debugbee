@@ -48,11 +48,23 @@ def debugbee_class(**parameters):
 def _debugbee_log(func, args, kwargs, parameters, cls=None, obj=None):
     global state
     parameters = compute_parameters(parameters)
+    outer_stacks = parameters[pn.OUTER_DEBUG]
+    depth_increases = 0
+    if outer_stacks:
+        stack = inspect.stack()
+        for depth in range(outer_stacks):
+            frame = stack[2 + depth][0]
+            stack_info = inspect.getframeinfo(frame)
+            write_message(stack_info.function, parameters)
+            state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
+            depth_increases += 1
     if state.depth < CALLER_DEPTH:
         log(func, args=args, kwargs=kwargs, parameters=parameters, cls=cls)
     state = state._replace(depth=state.depth + 1) # pylint: disable=protected-access
     returned_value = func(*args, **kwargs)
     state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
+    for _ in range(depth_increases):
+        state = state._replace(depth=state.depth - 1) # pylint: disable=protected-access
     return returned_value
 
 
@@ -144,22 +156,24 @@ def compute_arguments(function, args, kwargs, is_object):
 
 def reload_configuration():
     """ Reloads the configuration parameters from the available sources. """
-    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH
+    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH, OUTER_DEBUG
     CALLER_DEPTH = int(os.environ.get(pn.ENV_CALLER_DEPTH, '3'))
     LIST_ARGUMENTS = bool(os.environ.get(pn.ENV_LIST_ARGUMENTS, 'True'))
     IDENTATION = int(os.environ.get(pn.ENV_IDENTATION, '4'))
     OUTPUT_FILE = os.environ.get(pn.ENV_OUTPUT_FILE, None)
     OUT_WIDTH = os.environ.get(pn.ENV_OUT_WIDTH, 120)
+    OUTER_DEBUG = os.environ.get(pn.ENV_OUTER_DEBUG, 0)
 
 
 def reset_to_default():
     """ Resets all configuration parameters to defaults. """
-    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH
+    global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH, OUTER_DEBUG
     CALLER_DEPTH = 3
     LIST_ARGUMENTS = True
     IDENTATION = 4
     OUTPUT_FILE = None
     OUT_WIDTH = 120
+    OUTER_DEBUG = 0
 
 
 reload_configuration()
@@ -172,4 +186,6 @@ def compute_parameters(parameters=None):
         parameters[pn.OUT_FILE] = OUTPUT_FILE
     if pn.MESSAGE_MAX_WIDTH not in parameters:
         parameters[pn.MESSAGE_MAX_WIDTH] = OUT_WIDTH
+    if pn.OUTER_DEBUG not in parameters:
+        parameters[pn.OUTER_DEBUG] = OUTER_DEBUG
     return parameters

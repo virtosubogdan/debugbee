@@ -29,6 +29,10 @@ def max3(a, b, c, *args, **kwargs):
 def identity(argument, *args, **kwargs):
     return argument
 
+@debugbee(outer=1)
+def outer_debug():
+    return "function with outer debug"
+
 
 class TestFunctionDebug(object):
 
@@ -109,6 +113,13 @@ fibbonaci:number=4
         out, err = capsys.readouterr()
         assert out == """max3:a=1,b=2,c=3,=10,=12\n"""
         assert err == ""
+
+    def test_outer_debug(self, capsys):
+        outer_debug()
+        out, err = capsys.readouterr()
+        assert out == "test_outer_debug\n    outer_debug\n"
+        assert err == ""
+
 
 class TestLongOutput(object):
 
