@@ -1,4 +1,4 @@
-#pylint: disable=maybe-no-member, global-statement, invalid-name
+#pylint: disable=maybe-no-member, global-statement, invalid-name, star-args
 """
 Module for configuration and primary debug decorator.
 """
@@ -9,7 +9,7 @@ import inspect
 from itertools import izip_longest
 import os
 
-from .parameter_names import *
+import debugbee.parameter_names as pn
 
 State = namedtuple('State', ['depth'])
 state = State(depth=0)
@@ -60,7 +60,7 @@ def log(function, args, kwargs, parameters, cls):
     arguments = compute_arguments(function, args, kwargs, cls is not None)
     log_message = make_log_message(function.func_name, arguments, cls)
 
-    overflow_charactes = len(log_message) - parameters[MESSAGE_MAX_WIDTH]
+    overflow_charactes = len(log_message) - parameters[pn.MESSAGE_MAX_WIDTH]
     if overflow_charactes > 0:
         arguments, overflow_charactes = trim_arguments(arguments, overflow_charactes)
         log_message = make_log_message(function.func_name, arguments)
@@ -68,8 +68,8 @@ def log(function, args, kwargs, parameters, cls):
 
 
 def write_message(log_message, parameters):
-    if parameters[OUT_FILE]:
-        with open(parameters[OUT_FILE], 'a') as outputfile:
+    if parameters[pn.OUT_FILE]:
+        with open(parameters[pn.OUT_FILE], 'a') as outputfile:
             outputfile.write(log_message + '\n')
     else:
         print(log_message)
@@ -145,11 +145,11 @@ def compute_arguments(function, args, kwargs, is_object):
 def reload_configuration():
     """ Reloads the configuration parameters from the available sources. """
     global CALLER_DEPTH, LIST_ARGUMENTS, IDENTATION, OUTPUT_FILE, OUT_WIDTH
-    CALLER_DEPTH = int(os.environ.get(ENV_CALLER_DEPTH, '3'))
-    LIST_ARGUMENTS = bool(os.environ.get(ENV_LIST_ARGUMENTS, 'True'))
-    IDENTATION = int(os.environ.get(ENV_IDENTATION, '4'))
-    OUTPUT_FILE = os.environ.get(ENV_OUTPUT_FILE, None)
-    OUT_WIDTH = os.environ.get(ENV_OUT_WIDTH, 120)
+    CALLER_DEPTH = int(os.environ.get(pn.ENV_CALLER_DEPTH, '3'))
+    LIST_ARGUMENTS = bool(os.environ.get(pn.ENV_LIST_ARGUMENTS, 'True'))
+    IDENTATION = int(os.environ.get(pn.ENV_IDENTATION, '4'))
+    OUTPUT_FILE = os.environ.get(pn.ENV_OUTPUT_FILE, None)
+    OUT_WIDTH = os.environ.get(pn.ENV_OUT_WIDTH, 120)
 
 
 def reset_to_default():
@@ -168,8 +168,8 @@ reload_configuration()
 def compute_parameters(parameters=None):
     if not parameters:
         parameters = {}
-    if OUT_FILE not in parameters:
-        parameters[OUT_FILE] = OUTPUT_FILE
-    if MESSAGE_MAX_WIDTH not in parameters:
-        parameters[MESSAGE_MAX_WIDTH] = OUT_WIDTH
+    if pn.OUT_FILE not in parameters:
+        parameters[pn.OUT_FILE] = OUTPUT_FILE
+    if pn.MESSAGE_MAX_WIDTH not in parameters:
+        parameters[pn.MESSAGE_MAX_WIDTH] = OUT_WIDTH
     return parameters

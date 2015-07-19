@@ -1,3 +1,6 @@
+"""
+Constants used for configuration
+"""
 OUT_FILE = 'outputfile'
 MESSAGE_MAX_WIDTH = 'out_width'
 
